@@ -1,0 +1,128 @@
+# ==============================================================================
+# [Custom Hardware Synthesis Configuration]
+# Target: MAX78000 NPU
+# Architecture: ResNet-lite (Base Channel: 64)
+# Status: SUCCESS (Optimal Baseline)
+# Note: Manually managed SRAM out_offsets (0x0000 vs 0x4000) to prevent memory 
+# collision during the residual Add operation.
+# ==============================================================================
+---
+arch: ai87kws20net_resnet
+dataset: KWS_20
+
+layers:
+  - name: voice_conv1_Conv_8
+    data_format: HWC
+    processors: 0xffffffffffffffff
+    out_offset: 0x4000
+    op: Conv1d
+    kernel_size: 1
+    pad: 0
+    activate: Relu
+
+  - name: voice_conv2_Conv_6
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+
+  - name: voice_conv3_Conv_6
+    in_sequences: [voice_conv2_Conv_6]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000              # Operand 1 routed to 0x4000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: None
+    write_gap: 1
+    output_processors: 0xffffffffffffffff
+
+  - name: shortcut_Conv_6
+    in_sequences: [voice_conv2_Conv_6]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000              # Operand 0 routed to 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: None
+    write_gap: 1
+    output_processors: 0xffffffffffffffff
+
+  - name: residual_add
+    in_sequences: [shortcut_Conv_6, voice_conv3_Conv_6]
+    in_offset: 0x0000
+    processors: 0xffffffffffffffff
+    out_offset: 0x4000              # [Optimization] Precisely matched with Operand 1 offset
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  - name: voice_conv4_Conv_6
+    in_sequences: [residual_add]
+    in_offset: 0x4000               
+    processors: 0xffffffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+
+  - name: kws_conv1_Conv_6
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+
+  - name: kws_conv2_Conv_6
+    in_offset: 0x4000
+    processors: 0xffffffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+
+  - name: kws_conv3_Conv_6
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+    avg_pool: 2
+    pool_stride: 2
+
+  - name: kws_conv4_Conv_6
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+
+  - name: fc_MatMul_3
+    in_offset: 0x0000
+    processors: 0xffffffffffffffff
+    out_offset: 0x4000
+    op: Linear
+    flatten: true
+    activate: None

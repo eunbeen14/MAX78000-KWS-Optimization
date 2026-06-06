@@ -1,0 +1,159 @@
+# ==============================================================================
+# [Custom Hardware Synthesis Configuration]
+# Target: MAX78000 NPU
+# Architecture: ResNet-lite (Base Channel: 64, Extra Depth: 4)
+# Status: SUCCESS / LATENCY TESTED
+# Note: Implemented aggressive memory shifting. The sequential convolutions 
+# navigate through all four SRAM quadrants (0x0000 -> 0x2000 -> 0x4000 -> 0x6000) 
+# to ensure zero data collision during the deep forward pass.
+# ==============================================================================
+---
+arch: ai87kws20net_resnet
+dataset: KWS_20
+
+layers:
+  - name: voice_conv1_Conv_8
+    data_format: HWC
+    processors: 0xffffffffffffffff
+    out_offset: 0x4000
+    op: Conv1d
+    kernel_size: 1
+    pad: 0
+    activate: Relu
+
+  - name: voice_conv2_Conv_6
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+
+# === [EXTRA DEPTH 4 BLOCKS START] ===
+  # [Block 0] 0x0000 -> 0x2000 -> 0x4000
+  - name: extra_convs_0
+    in_sequences: [voice_conv2_Conv_6]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x2000              # Shifted to Q1
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_0
+    in_sequences: [voice_conv2_Conv_6, extra_convs_0]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000              # Shifted to Q2
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  # [Block 1] 0x4000 -> 0x6000 -> 0x0000
+  - name: extra_convs_1
+    in_sequences: [extra_adds_0]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x6000              # Shifted to Q3
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_1
+    in_sequences: [extra_adds_0, extra_convs_1]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000              # Returned to Q0
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  # [Block 2 & 3] Repeating the Ping-Pong memory routing
+  - name: extra_convs_2
+    in_sequences: [extra_adds_1]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x2000
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_2
+    in_sequences: [extra_adds_1, extra_convs_2]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  - name: extra_convs_3
+    in_sequences: [extra_adds_2]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x6000
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_3
+    in_sequences: [extra_adds_2, extra_convs_3]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+# === [EXTRA DEPTH 4 BLOCKS END] ===
+
+  - name: voice_conv3_Conv_6
+    in_sequences: [extra_adds_3]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: None
+    write_gap: 1
+    output_processors: 0xffffffffffffffff
+
+  - name: shortcut_Conv_6
+    in_sequences: [extra_adds_3]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: None
+    write_gap: 1
+    output_processors: 0xffffffffffffffff
+
+  - name: residual_add
+    in_sequences: [shortcut_Conv_6, voice_conv3_Conv_6]
+    in_offset: 0x0000
+    processors: 0xffffffffffffffff
+    out_offset: 0x4000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  - name: voice_conv4_Conv_6
+    in_sequences: [residual_add]
+    in_offset: 0x4000
+    processors: 0xffffffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+# (이하 kws_conv1 ~ fc는 기본 baseline과 동일하게 유지)

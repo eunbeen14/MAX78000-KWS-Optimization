@@ -1,0 +1,288 @@
+# ==============================================================================
+# [Custom Hardware Synthesis Configuration]
+# Target: MAX78000 NPU
+# Architecture: ResNet-lite (Base Channel: 64, Extra Depth: 8)
+# Status: EXTREME DEPTH TEST
+# Note: Pushed the network depth to the limit while maintaining the ping-pong 
+# memory routing strategy (0x0000 -> 0x2000 -> 0x4000 -> 0x6000) across 8 extra layers.
+# Designed to benchmark the absolute maximum inference latency on the NPU.
+# ==============================================================================
+---
+arch: ai87kws20net_resnet
+dataset: KWS_20
+
+layers:
+  - name: voice_conv1_Conv_8
+    data_format: HWC
+    processors: 0xffffffffffffffff
+    out_offset: 0x4000
+    op: Conv1d
+    kernel_size: 1
+    pad: 0
+    activate: Relu
+
+  - name: voice_conv2_Conv_6
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+
+  - name: extra_convs_0
+    in_sequences: [voice_conv2_Conv_6]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x2000
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_0
+    in_sequences: [voice_conv2_Conv_6, extra_convs_0]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  # [Block 1] 0x4000 -> 0x6000 -> 0x0000
+  - name: extra_convs_1
+    in_sequences: [extra_adds_0]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x6000
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_1
+    in_sequences: [extra_adds_0, extra_convs_1]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  # [Block 2] 0x0000 -> 0x2000 -> 0x4000
+  - name: extra_convs_2
+    in_sequences: [extra_adds_1]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x2000
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_2
+    in_sequences: [extra_adds_1, extra_convs_2]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  # [Block 3] 0x4000 -> 0x6000 -> 0x0000
+  - name: extra_convs_3
+    in_sequences: [extra_adds_2]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x6000
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_3
+    in_sequences: [extra_adds_2, extra_convs_3]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  # [Block 4] 0x0000 -> 0x2000 -> 0x4000
+  - name: extra_convs_4
+    in_sequences: [extra_adds_3]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x2000
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_4
+    in_sequences: [extra_adds_3, extra_convs_4]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  # [Block 5] 0x4000 -> 0x6000 -> 0x0000
+  - name: extra_convs_5
+    in_sequences: [extra_adds_4]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x6000
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_5
+    in_sequences: [extra_adds_4, extra_convs_5]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  # [Block 6] 0x0000 -> 0x2000 -> 0x4000
+  - name: extra_convs_6
+    in_sequences: [extra_adds_5]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x2000
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_6
+    in_sequences: [extra_adds_5, extra_convs_6]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  # [Block 7] 0x4000 -> 0x6000 -> 0x0000 
+  - name: extra_convs_7
+    in_sequences: [extra_adds_6]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x6000
+    op: Conv1d
+    kernel_size: 3
+    pad: 1
+    activate: None
+
+  - name: extra_adds_7
+    in_sequences: [extra_adds_6, extra_convs_7]
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  - name: voice_conv3_Conv_6
+    in_sequences: [extra_adds_7]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: None
+    write_gap: 1
+    output_processors: 0xffffffffffffffff
+
+  - name: shortcut_Conv_6
+    in_sequences: [extra_adds_7]
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: None
+    write_gap: 1
+    output_processors: 0xffffffffffffffff
+
+  - name: residual_add
+    in_sequences: [shortcut_Conv_6, voice_conv3_Conv_6]
+    in_offset: 0x0000
+    processors: 0xffffffffffffffff
+    out_offset: 0x4000
+    op: Passthrough
+    eltwise: Add
+    operands: 2
+
+  - name: voice_conv4_Conv_6
+    in_sequences: [residual_add]
+    in_offset: 0x4000
+    processors: 0xffffffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+
+  - name: kws_conv1_Conv_6
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+
+  - name: kws_conv2_Conv_6
+    in_offset: 0x4000
+    processors: 0xffffffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+
+  - name: kws_conv3_Conv_6
+    in_offset: 0x0000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+    avg_pool: 2
+    pool_stride: 2
+
+  - name: kws_conv4_Conv_6
+    in_offset: 0x4000
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Conv1d
+    kernel_size: 3
+    pad: 0
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+
+  - name: fc_MatMul_3
+    in_offset: 0x0000
+    processors: 0xffffffffffffffff
+    out_offset: 0x4000
+    op: Linear
+    flatten: true
+    activate: None
