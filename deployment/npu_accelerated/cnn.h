@@ -1,12 +1,25 @@
-/**************************************************************************************************
-* Copyright (C) 2019-2021 Maxim Integrated Products, Inc. All Rights Reserved.
-*
-* Maxim Integrated Products, Inc. Default Copyright Notice:
-* https://www.maximintegrated.com/en/aboutus/legal/copyrights.html
-**************************************************************************************************/
+/******************************************************************************
+ *
+ * Copyright (C) 2022-2023 Maxim Integrated Products, Inc. (now owned by 
+ * Analog Devices, Inc.),
+ * Copyright (C) 2023-2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 /*
- * This header file was automatically @generated for the kws20 network from a template.
+ * This header file was automatically generated for the kws20_v3 network from a template.
  * Please do not edit; instead, edit the template and regenerate.
  */
 
@@ -23,26 +36,27 @@ typedef int16_t q15_t;
 
 /*
   SUMMARY OF OPS
-  Hardware: 7,127,328 ops (7,078,848 macc; 42,336 comp; 6,144 add; 0 mul; 0 bitwise)
-    Layer 0 (voice_conv1_Conv_8): 1,585,152 ops (1,572,864 macc; 12,288 comp; 0 add; 0 mul; 0 bitwise)
-    Layer 1 (voice_conv2_Conv_6): 1,732,416 ops (1,714,176 macc; 18,240 comp; 0 add; 0 mul; 0 bitwise)
-    Layer 2 (voice_conv3_Conv_6): 1,105,920 ops (1,105,920 macc; 0 comp; 0 add; 0 mul; 0 bitwise)
-    Layer 3 (shortcut_Conv_6): 1,105,920 ops (1,105,920 macc; 0 comp; 0 add; 0 mul; 0 bitwise)
-    Layer 4 (residual_add): 3,840 ops (0 macc; 0 comp; 3,840 add; 0 mul; 0 bitwise)
-    Layer 5 (voice_conv4_Conv_6): 537,312 ops (534,528 macc; 2,784 comp; 0 add; 0 mul; 0 bitwise)
-    Layer 6 (kws_conv1_Conv_6): 253,344 ops (248,832 macc; 4,512 comp; 0 add; 0 mul; 0 bitwise)
-    Layer 7 (kws_conv2_Conv_6): 463,200 ops (460,800 macc; 2,400 comp; 0 add; 0 mul; 0 bitwise)
-    Layer 8 (kws_conv3_Conv_6): 279,744 ops (276,480 macc; 960 comp; 2,304 add; 0 mul; 0 bitwise)
-    Layer 9 (kws_conv4_Conv_6): 56,448 ops (55,296 macc; 1,152 comp; 0 add; 0 mul; 0 bitwise)
-    Layer 10 (fc_MatMul_3): 4,032 ops (4,032 macc; 0 comp; 0 add; 0 mul; 0 bitwise)
+  Hardware: 8,402,528 ops (8,345,344 macc; 54,496 comp; 2,688 add; 0 mul; 0 bitwise)
+    Layer 0: 1,651,200 ops (1,638,400 macc; 12,800 comp; 0 add; 0 mul; 0 bitwise)
+    Layer 1: 3,640,896 ops (3,628,800 macc; 12,096 comp; 0 add; 0 mul; 0 bitwise)
+    Layer 2: 1,177,344 ops (1,161,216 macc; 16,128 comp; 0 add; 0 mul; 0 bitwise)
+    Layer 3: 565,104 ops (562,176 macc; 2,928 comp; 0 add; 0 mul; 0 bitwise)
+    Layer 4: 281,280 ops (276,480 macc; 4,800 comp; 0 add; 0 mul; 0 bitwise)
+    Layer 5: 518,784 ops (516,096 macc; 2,688 comp; 0 add; 0 mul; 0 bitwise)
+    Layer 6: 407,288 ops (403,200 macc; 1,400 comp; 2,688 add; 0 mul; 0 bitwise)
+    Layer 7: 155,256 ops (153,600 macc; 1,656 comp; 0 add; 0 mul; 0 bitwise)
+    Layer 8: 5,376 ops (5,376 macc; 0 comp; 0 add; 0 mul; 0 bitwise)
 
   RESOURCE USAGE
-  Weight memory: 163,776 bytes out of 442,368 bytes total (37.0%)
-  Bias memory:   0 bytes out of 2,048 bytes total (0.0%)
+  Weight memory: 169,472 bytes out of 442,368 bytes total (38%)
+  Bias memory:   0 bytes out of 2,048 bytes total (0%)
 */
 
 /* Number of outputs for this network */
-#define CNN_NUM_OUTPUTS 11
+#define CNN_NUM_OUTPUTS 21
+
+/* Use this timer to time the inference */
+#define CNN_INFERENCE_TIMER MXC_TMR0
 
 /* Port pin actions used to signal that processing is active */
 
